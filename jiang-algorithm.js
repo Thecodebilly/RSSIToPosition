@@ -27,7 +27,7 @@ function findKBest(beacons, k=7)
 //all obtained rssi values for a given 1000ms period as input_rssi
 var a [beacons.size()];
 var sortedArr [7];
-var dis
+var dist;
 //get all rssi values
 index=0;
 for (i in beacon)
@@ -57,16 +57,33 @@ for (var i=0; var<7; var++){
   return sortedArr;
 }
 
-function getWeights(NewBeacons){
+function getWeights(BeaconArray){
   var cumulativeRSSI;
-  NewBeacons.forEach(function(beacon){
-    cumulativeRSSI += beacon[2];
+  var temp;
+  var InverseRSSI = new Array(beacons.length);
+  // fill InverseRSSI array with (100 - RSSI) from each beacon
+  // accumulate the new sum of RSSIs to get (linearly) weighted average
+  BeaconArray.forEach(function(beacon){
+    temp = 100 - Math.abs(beacon[2]);
+    InverseRSSI.push(temp);
+    cumulativeRSSI += temp;
   });
-  // cumulativeRSSI = -423 or something, sum of all rssis
-  NewBeacons.forEach(function(beacon){
-    // CHANGE THIS
-    NewBeacons.push(beacon/cumulativeRSSI);
+  // each beacon gets an additional field, its weight, which is:
+  // ( (100-RSSI) / new sum of RSSIs )
+  BeaconArray.forEach(function(beacon){
+    beacon[4] = (InverseRSSI[BeaconArray.indexOf(beacon)]/cumulativeRSSI)
   });
+  return BeaconArray;
+}
+
+function getAveragedLocation(BeaconArray){
+  var x, y;
+  BeaconArray.forEach(function(beacon){
+    x += beacon[0] * beacon[5];
+    y += beacon[1] * beacon[5];
+  })
+  var userLocation = [x, y];
+  return userLocation;
 }
 
 function getWeightedPosition(beacons){
@@ -75,20 +92,27 @@ function getWeightedPosition(beacons){
   if(beacons.length < 3) {
     return ["ERROR", "Not enough beacons!"]
   }
-  var NewBeacons = new Array(beacons.length);
+  var BeaconArray = new Array(beacons.length);
   i = 0;
+  // stores x, y, rssi, distance (radius in feet?), and placeholder weight
   while(i < num){
     x = beacons[i][0];
     y = beacons[i][1];
     // h = beacons[i][2];
     r = beacons[i][3];
     d = rssi_to_dist(beacons[i][3], beacons[i][4], beacons[i][5])
-    NewBeacons[i] = [x, y, r, d];
+    // will become the weight
+    w = 1
+    BeaconArray[i] = [x, y, r, d, w];
     i++;
   }
-  // sort and find top k (k = 7 default)
-  NewBeacons = findKBest(NewBeacons);
+  // sort and find top k beacons (k = 7 default)
+  BeaconArray = findKBest(BeaconArray);
+  // populate the w element in the BeaconArray array with weights (LINEARLY)
+  BeaconArray = getWeights(BeaconArray);
+  // average x, y values
+  var userLocation = getAveragedLocation(BeaconArray);
 
-
+  return userLocation;
 
 }

@@ -21,15 +21,74 @@ rssi value handling, etc.
 */
 import * as ipsModule from 'ips.js';
 
-function getWeightedPosition(beacons){
-// import data
-  var num = beacons.length;
-  var x, y, h, r;
-  if(num > 0) {
-    x = beacons[0][0];
-    y = beacons[0][1];
-    h = beacons[0][2];
-    // r uses default values of -65 for RSSI@1meter
-    r =
+// beacon[i][3] is the RSSI, sort array by this value
+function findKBest(beacons, k=7)
+{
+//all obtained rssi values for a given 1000ms period as input_rssi
+var a [beacons.size()];
+var sortedArr [7];
+var dis
+//get all rssi values
+index=0;
+for (i in beacon)
+{
+a[index]=beacons[i][2]
+index++;
+}
+//sorts the array of all the rssi values
+a.sort(function(a, b) {
+  return b - a;
+})
+// compares the top 7 in sorted rssi list, a, and the rssi values in the original beacon array.
+// If a value matches, put the x, y, and rssi into a new array called sortedArr.
+index=0;
+for (var i=0; var<7; var++){
+  for i in beacons
+  {
+  if a[1]==beacons[i][2]
+    {
+    sortedArr=beacons[i];
+    index++;
+    if index==7
+    break;
+    }
   }
+  }
+  return sortedArr;
+}
+
+function getWeights(NewBeacons){
+  var cumulativeRSSI;
+  NewBeacons.forEach(function(beacon){
+    cumulativeRSSI += beacon[2];
+  });
+  // cumulativeRSSI = -423 or something, sum of all rssis
+  NewBeacons.forEach(function(beacon){
+    // CHANGE THIS
+    NewBeacons.push(beacon/cumulativeRSSI);
+  });
+}
+
+function getWeightedPosition(beacons){
+  // import data
+  var x, y, r, d, i;
+  if(beacons.length < 3) {
+    return ["ERROR", "Not enough beacons!"]
+  }
+  var NewBeacons = new Array(beacons.length);
+  i = 0;
+  while(i < num){
+    x = beacons[i][0];
+    y = beacons[i][1];
+    // h = beacons[i][2];
+    r = beacons[i][3];
+    d = rssi_to_dist(beacons[i][3], beacons[i][4], beacons[i][5])
+    NewBeacons[i] = [x, y, r, d];
+    i++;
+  }
+  // sort and find top k (k = 7 default)
+  NewBeacons = findKBest(NewBeacons);
+
+
+
 }
